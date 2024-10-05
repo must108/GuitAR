@@ -14,9 +14,23 @@ public class DisplayNoteManager : MonoBehaviour
     [SerializeField] bool setDefault = false;
     [SerializeField] TextMeshProUGUI text;
     private Renderer thisRenderer;
+
     void Start()
     {
        thisRenderer =  transform.GetComponent<Renderer>();
+       // Find the first GameObject with the tag "Player"
+        GameObject parent = GameObject.FindWithTag("GuitarStrings");
+
+        if (parent != null)
+        {
+            Debug.Log("Found parent object: " + parent.name);
+        }
+        else
+        {
+            Debug.Log("parent object not found!");
+        }
+       transform.SetParent(parent.transform);
+       
     }
 
     void SetIncorrect()
@@ -57,5 +71,6 @@ public class DisplayNoteManager : MonoBehaviour
             setDefault = false;
             SetDefault();
         }
+
     }
 }
