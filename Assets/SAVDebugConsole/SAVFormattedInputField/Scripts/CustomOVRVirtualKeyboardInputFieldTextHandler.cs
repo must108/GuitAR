@@ -2,6 +2,7 @@
 
 //https://communityforums.atmeta.com/t5/Unity-VR-Development/How-to-Show-and-Hide-the-OVRVirtualKeyboard-Building-Block/td-p/1107237
 
+using System;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
@@ -41,7 +42,7 @@ namespace ShadowAndVVWorkshop.SAVFormattedInputField
             {
                 BindKeyboard();
             }
-            if (isBound && keyboard != null && keyboard.TextHandler != this)
+            if (isBound && keyboard != null && keyboard.TextHandler != this as Object)
             {
                 //Debug.Log("OVRVirtualKeyboard update " + (keyboard.TextHandler != this).ToString());
                 UnbindKeyboard();
@@ -75,7 +76,7 @@ namespace ShadowAndVVWorkshop.SAVFormattedInputField
             InputField?.DeactivateInputField();
             if (keyboard != null)
             {
-                if (keyboard.TextHandler == this)
+                if (keyboard.TextHandler == this as Object)
                 {
                     //Debug.Log("OVRVirtualKeyboard UNBindKeyboard keyboard.TextHandler == this");
                     keyboard.TextHandler = null;
