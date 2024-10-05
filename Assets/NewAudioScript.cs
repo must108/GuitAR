@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class AudioProcessor : MonoBehaviour
+public class NewAudioScript : MonoBehaviour
 {
     // Data structure
     public class TheyPlayed
