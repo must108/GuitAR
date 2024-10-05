@@ -27,13 +27,15 @@ public class AudioProcessor : MonoBehaviour
             {
                 Debug.Log(device);
             }
-            selectedMic = Microphone.devices[0];        // "Android audio input"
+            selectedMic = Microphone.devices[1];        // "Android audio input"
             currentClip = Microphone.Start(selectedMic, true, 1, 44100);
             audioInterface.clip = currentClip;
             audioInterface.loop = true;   // Ensure loop is enabled for continuous play
             audioInterface.Play();
 
+
             spectrumData = new float[spectrumSize];
+            Debug.Log("selected: " + selectedMic); 
         }
         else
         {
