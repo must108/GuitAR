@@ -274,6 +274,14 @@ PrefabInstance:
       propertyPath: isInsightPassthroughEnabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 9079469126192130986, guid: 82a36d298ea215f42bfc818e57b7d4b5, type: 3}
+      propertyPath: SimultaneousHandsAndControllersEnabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9079469126192130986, guid: 82a36d298ea215f42bfc818e57b7d4b5, type: 3}
+      propertyPath: launchSimultaneousHandsControllersOnStartup
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -481,7 +489,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sampleWindow: 128
-  selectedMic: 
   colorChanger: {fileID: 0}
 --- !u!4 &779791638
 Transform:

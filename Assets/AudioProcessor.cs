@@ -7,8 +7,8 @@ public class AudioProcessor : MonoBehaviour
 {
     private AudioClip currentClip;
     private AudioSource audioInterface;
+    private string selectedMic;
     public int sampleWindow = 128;
-    public string selectedMic;
     public GameObject colorChanger;
     // Start is called before the first frame update
     void Start()
@@ -17,6 +17,11 @@ public class AudioProcessor : MonoBehaviour
 
         if (Microphone.devices.Length > 0)
         {
+            Debug.Log("Available Microphones:");
+            foreach (string device in Microphone.devices)
+            {
+                Debug.Log(device);
+            }
             selectedMic = Microphone.devices[0];
             currentClip = Microphone.Start(selectedMic, true, 1, 44100);
             audioInterface.clip = currentClip;
@@ -34,26 +39,20 @@ public class AudioProcessor : MonoBehaviour
         if (Microphone.IsRecording(selectedMic))
         {
             float level = GetAudioLevel();
-
-            if (level > 0.1f)
+            Debug.Log("Available Microphones:");
+            foreach (string device in Microphone.devices)
             {
-                Debug.Log("awa 1");
+                Debug.Log(device);
             }
-            else if (level > 0.05f)
-            {
-                Debug.Log("awa 2");
-            }
-            else
-            {
-                Debug.Log("awa 3");
-            }
+            Debug.Log(selectedMic);
+            Debug.Log(level);
         }
     }
 
     float GetAudioLevel()
     {
         float[] data = new float[sampleWindow];
-        int micPosition = Microphone.GetPosition(selectedMic) - sampleWindow + 1;
+        int micPosition = Microphone.GetPosition("") - sampleWindow + 1;
         if (micPosition < 0) return 0;
 
         currentClip.GetData(data, micPosition);
