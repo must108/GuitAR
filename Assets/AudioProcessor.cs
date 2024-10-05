@@ -18,7 +18,7 @@ public class AudioProcessor : MonoBehaviour
         if (Microphone.devices.Length > 0)
         {
             selectedMic = Microphone.devices[0];
-            currentClip = Microphone.Start(selectedMic, false, 1, 44100);
+            currentClip = Microphone.Start(selectedMic, true, 1, 44100);
             audioInterface.clip = currentClip;
             audioInterface.Play();
         }
@@ -37,15 +37,15 @@ public class AudioProcessor : MonoBehaviour
 
             if (level > 0.1f)
             {
-                colorChanger.GetComponent<DEBUG_ColorChanger>()._aRandom();
+                Debug.Log("awa 1");
             }
             else if (level > 0.05f)
             {
-                colorChanger.GetComponent<DEBUG_ColorChanger>()._aRandom();
+                Debug.Log("awa 2");
             }
             else
             {
-                colorChanger.GetComponent<DEBUG_ColorChanger>()._aRandom();
+                Debug.Log("awa 3");
             }
         }
     }
