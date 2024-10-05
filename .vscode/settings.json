@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Grokit Test.sln"
+    "dotnet.defaultSolution": "GuitAR.sln"
 }
