@@ -22,7 +22,7 @@ public class AudioProcessor : MonoBehaviour
             {
                 Debug.Log(device);
             }
-            selectedMic = Microphone.devices[0];        // Android audio input
+            selectedMic = Microphone.devices[0];        // "Android audio input"
             currentClip = Microphone.Start(selectedMic, true, 1, 44100);
             audioInterface.clip = currentClip;
             audioInterface.Play();
