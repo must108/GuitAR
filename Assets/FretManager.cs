@@ -8,7 +8,7 @@ using UnityEngine;
 public class FretManager : MonoBehaviour
 {
 
-    [SerializeField] public bool test = false;
+    [SerializeField] private bool test = false;
     private float timer = 0f;       // Timer to track time elapsed
     private readonly float interval = 1f;    // Interval of 5 seconds
     private int counter = 0;
@@ -42,7 +42,6 @@ public class FretManager : MonoBehaviour
         
         if (test == true)
         {
-            print("fasdfad");
             // Add the time since the last frame to the timer
             timer += Time.deltaTime;
             print(timer);
