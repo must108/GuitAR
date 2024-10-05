@@ -27,7 +27,7 @@ public class AudioProcessor : MonoBehaviour
             {
                 Debug.Log(device);
             }
-            selectedMic = Microphone.devices[1];        // "Android audio input"
+            selectedMic = "Analogue 1 + 2 (Focusrite USB Audio)";        // "Android audio input"
             currentClip = Microphone.Start(selectedMic, true, 1, 44100);
             audioInterface.clip = currentClip;
             audioInterface.loop = true;   // Ensure loop is enabled for continuous play
@@ -35,7 +35,7 @@ public class AudioProcessor : MonoBehaviour
 
 
             spectrumData = new float[spectrumSize];
-            Debug.Log("selected: " + selectedMic); 
+            Debug.Log("selected: " + selectedMic);
         }
         else
         {
@@ -107,7 +107,7 @@ public class AudioProcessor : MonoBehaviour
     int FrequencyToMidi(float frequency)
     {
         if (frequency <= 0) return -1; // Invalid frequency
-        
+
         // Calculate the MIDI note number from frequency
         float midiNoteFloat = 12 * Mathf.Log(frequency / referenceFrequency, 2) + 69;
         return Mathf.RoundToInt(midiNoteFloat); // Round to nearest MIDI note number
