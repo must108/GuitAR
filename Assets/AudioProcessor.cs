@@ -13,7 +13,6 @@ public class AudioProcessor : MonoBehaviour
     public float[] spectrumData;
     public float referenceFrequency = 440.0f; // A4 = 440Hz
     public string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-    public GameObject colorChanger;
 
     // Start is called before the first frame update
     void Start()

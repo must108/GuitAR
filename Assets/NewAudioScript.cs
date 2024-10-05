@@ -1,472 +1,351 @@
-using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using System.Linq; // Required for using LINQ (for averaging the list)
 
-public class NewAudioScript : MonoBehaviour
+public class TheyPlayed
 {
-    // Data structure
-    public class TheyPlayed
-    {
-        public bool isNote;
-        public bool isChord;
-        public bool isNewNote;
-        public int?[,] frets; // [4 frets (0 to 3), 6 strings]
-        public string isBeingPlayed;
+    public bool isNewNote;      // True when a new strum is detected
+    public string isBeingPlayed;  // The musical note being played (e.g., "C#4")
+    public int?[,] frets;       // Array to represent 4 frets and 6 strings. Each index is a string, each row is a fret.
 
-        public override string ToString()
-        {
-            // Build a string representation of the frets array
-            string fretsString = "";
-            for (int fret = 0; fret < 4; fret++)
-            {
-                fretsString += $"Fret {fret + 1}: ";
-                for (int stringIndex = 0; stringIndex < 6; stringIndex++)
-                {
-                    fretsString += frets[fret, stringIndex]?.ToString() ?? "null";
-                    if (stringIndex < 5) fretsString += ", ";
-                }
-                fretsString += "\n";
-            }
-            return $"TheyPlayed [isNote={isNote}, isChord={isChord}, isNewNote={isNewNote}, frets=\n{fretsString}, isBeingPlayed='{isBeingPlayed}']";
-        }
+    // Constructor to initialize the frets array
+    public TheyPlayed()
+    {
+        frets = new int?[4, 6]; // Initialize the array to hold 4 frets x 6 strings
+        ResetFrets();
     }
 
-    // Audio variables
-    private AudioSource audioSource;
-
-    private string selectedMic;
-    public int sampleRate = 44100;
-    public int bufferSize = 1024;
-
-    // Buffers
-    private float[] audioBuffer;
-    private Queue<float[]> lastThreeBuffers = new Queue<float[]>();
-    private List<float> averageEnergyList = new List<float>();
-
-    // Thresholds
-    public float volumeThreshold = 0.01f;
-    private float dynamicThreshold = 0.0f;
-    public float tolerance = 0.12f; // 12 cents tolerance
-
-    // Chord maps
-    public Dictionary<string, float[]> chordMaps = new Dictionary<string, float[]>();
-
-    // Note mappings
-    private int[] openStringMidiNotes = new int[6] { 40, 45, 50, 55, 59, 64 }; // E2, A2, D3, G3, B3, E4
-    private Dictionary<int, List<(int stringIndex, int fret)>> midiNoteToStringFret = new Dictionary<int, List<(int, int)>>();
-
-    private bool isNewNoteDetected = false;
-    private float lastBufferEnergy = 0f;
-
-    void Start()
+    // Reset frets to all null values when needed
+    public void ResetFrets()
     {
-        // Initialize variables
-        audioBuffer = new float[bufferSize];
-
-        // Initialize chord maps
-        InitializeChordMaps();
-
-        // Initialize note mappings
-        InitializeNoteMappings();
-
-        // Get AudioSource component
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-
-        // Start microphone
-        StartMicrophone();
-    }
-
-    void Update()
-    {
-        // Process audio
-        if (Microphone.IsRecording(selectedMic))
-        {
-            ProcessAudio();
-        }
-    }
-
-    void InitializeChordMaps()
-    {
-        // Initialize chord maps with expected chroma vectors
-        chordMaps["C Major"] = new float[12];
-        chordMaps["C Major"][0] = 1f; // C
-        chordMaps["C Major"][4] = 1f; // E
-        chordMaps["C Major"][7] = 1f; // G
-
-        chordMaps["G Major"] = new float[12];
-        chordMaps["G Major"][7] = 1f;  // G
-        chordMaps["G Major"][11] = 1f; // B
-        chordMaps["G Major"][2] = 1f;  // D
-
-        // Add more chords as needed, covering all possible chords within the first four frets
-    }
-
-    void InitializeNoteMappings()
-    {
-        // Initialize midiNoteToStringFret dictionary
-        // Map MIDI notes to possible string and fret combinations within the first four frets
-        for (int stringIndex = 0; stringIndex < 6; stringIndex++)
-        {
-            for (int fret = 0; fret <= 4; fret++)
-            {
-                int midiNote = openStringMidiNotes[stringIndex] + fret;
-                if (!midiNoteToStringFret.ContainsKey(midiNote))
-                {
-                    midiNoteToStringFret[midiNote] = new List<(int, int)>();
-                }
-                midiNoteToStringFret[midiNote].Add((stringIndex, fret));
-            }
-        }
-    }
-
-    void StartMicrophone()
-    {
-        Debug.Log("Available Microphones:");
-        foreach (string device in Microphone.devices)
-        {
-            Debug.Log(device);
-        }
-        // Quest: "Android audio input"
-        selectedMic = "Analogue 1 + 2 (Focusrite USB Audio)"; // Replace with your microphone name or use the first available
-
-        // Ensure 'selectedMic' is valid
-        if (string.IsNullOrEmpty(selectedMic))
-        {
-            if (Microphone.devices.Length > 0)
-            {
-                selectedMic = Microphone.devices[0];
-                Debug.Log("No microphone specified. Using default: " + selectedMic);
-            }
-            else
-            {
-                Debug.LogError("No microphone devices found.");
-                return;
-            }
-        }
-
-        // Start the microphone and assign it to an AudioClip
-        AudioClip micClip = Microphone.Start(selectedMic, true, 1, sampleRate);
-        audioSource.clip = micClip;
-        audioSource.loop = true;
-
-        // Wait until the microphone starts recording
-        while (!(Microphone.GetPosition(selectedMic) > 0)) { }
-
-        audioSource.Play();
-    }
-
-    void ProcessAudio()
-    {
-        Debug.Log("In ProcessAudio()");
-        // Get spectrum data
-        float[] spectrum = new float[bufferSize];
-        audioSource.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
-
-        // Calculate energy (volume)
-        float bufferEnergy = CalculateEnergy(spectrum);
-        Debug.Log($"Buffer energy: {bufferEnergy}");
-
-        // Onset detection for new note
-        isNewNoteDetected = OnsetDetection(bufferEnergy);
-
-
-        Debug.Log("Buffer energy above threshold. Processing sample.");
-
-        // Save the energy and recalculate dynamic threshold
-        averageEnergyList.Add(bufferEnergy);
-        if (averageEnergyList.Count > 10)
-            averageEnergyList.RemoveAt(0);
-
-        float averageEnergy = CalculateAverageEnergy(averageEnergyList);
-        dynamicThreshold = volumeThreshold * bufferEnergy / averageEnergy;
-
-        // Detect pitches
-        List<float> detectedFrequencies = DetectPitches(spectrum);
-        List<int> detectedMidiNotes = new List<int>();
-        foreach (float freq in detectedFrequencies)
-        {
-            // Calculate MIDI note number
-            float midiNoteFloat = 69 + 12 * Mathf.Log(freq / 440f, 2f);
-            int midiNote = Mathf.RoundToInt(midiNoteFloat);
-            detectedMidiNotes.Add(midiNote);
-        }
-
-        // Determine if it's a note or a chord
-        bool isChord = detectedMidiNotes.Count > 1;
-        bool isNote = detectedMidiNotes.Count == 1;
-
-        // Create TheyPlayed object
-        TheyPlayed theyPlayed = new TheyPlayed();
-        theyPlayed.isNote = isNote;
-        theyPlayed.isChord = isChord;
-        theyPlayed.isNewNote = isNewNoteDetected;
-        theyPlayed.frets = new int?[4, 6]; // frets 0 to 3 (first 4 frets), strings 0 to 5
-
-        // Initialize frets array to null
         for (int fret = 0; fret < 4; fret++)
         {
             for (int stringIndex = 0; stringIndex < 6; stringIndex++)
             {
-                theyPlayed.frets[fret, stringIndex] = null;
+                frets[fret, stringIndex] = null;  // Null if the string is not being played
             }
         }
+    }
 
-        // Keep track of which strings are being played
-        bool[] stringsPlayed = new bool[6];
-
-        foreach (int midiNote in detectedMidiNotes)
+    // Method to update fret data for a given string and fret
+    public void UpdateFret(int fret, int stringIndex, int? value)
+    {
+        if (fret >= 0 && fret < 4 && stringIndex >= 0 && stringIndex < 6)
         {
-            if (midiNoteToStringFret.ContainsKey(midiNote))
+            frets[fret, stringIndex] = value;  // Set the fret value, 1 = finger on fret, 0 = played open string
+        }
+    }
+
+    // String representation of the TheyPlayed object, including frets and the note played
+    public override string ToString()
+    {
+        string fretsString = "";
+
+        for (int fret = 0; fret < 4; fret++)
+        {
+            fretsString += $"Fret {fret + 1}: ";
+            for (int stringIndex = 0; stringIndex < 6; stringIndex++)
             {
-                List<(int stringIndex, int fret)> possiblePositions = midiNoteToStringFret[midiNote];
-                // Select the position with the lowest fret number
-                (int stringIndex, int fret) selectedPosition = (-1, int.MaxValue);
-                foreach (var pos in possiblePositions)
-                {
-                    if (pos.fret <= 4 && pos.fret < selectedPosition.fret && !stringsPlayed[pos.stringIndex])
-                    {
-                        selectedPosition = pos;
-                    }
-                }
-                if (selectedPosition.stringIndex != -1)
-                {
-                    stringsPlayed[selectedPosition.stringIndex] = true;
-                    int fretIndex = selectedPosition.fret; // fret 0 to 4
-                    if (selectedPosition.fret == 0)
-                    {
-                        // Open string
-                        theyPlayed.frets[0, selectedPosition.stringIndex] = 0;
-                    }
-                    else
-                    {
-                        // Finger on fret
-                        theyPlayed.frets[selectedPosition.fret - 1, selectedPosition.stringIndex] = 1;
-                    }
-                }
+                // Use the "?" operator to handle null values, printing "null" if it's not populated
+                fretsString += frets[fret, stringIndex]?.ToString() ?? "null";
+                if (stringIndex < 5) fretsString += ", "; // Add commas between strings
             }
+            fretsString += "\n"; // Newline after each fret
         }
 
-        // For strings that are being played but no finger is on any fret (open strings not assigned to any detected note), set frets[0, stringIndex] = 0
-        for (int stringIndex = 0; stringIndex < 6; stringIndex++)
+        return $"TheyPlayed [isNewNote={isNewNote}, frets=\n{fretsString}, isBeingPlayed='{isBeingPlayed}']";
+    }
+}
+
+
+
+public class NewAudioScript : MonoBehaviour
+{
+    private AudioClip currentClip;
+    private AudioSource audioInterface;
+    private string selectedMic;
+    public int sampleWindow = 1024; // The number of samples for FFT
+    public int spectrumSize = 1024; // The size of the spectrum for frequency analysis
+    public float[] spectrumData; // The array to store spectrum data for frequency analysis
+    public float referenceFrequency = 440.0f; // A4 reference frequency for tuning, 440 Hz
+    public string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" }; // Note names for MIDI values
+
+    private TheyPlayed theyPlayed = new TheyPlayed(); // Instance of the TheyPlayed class
+    private float[] previousBuffer = new float[1024]; // Store previous buffer for smoothing
+
+    // Variables for temporal smoothing and peak detection
+    private List<int> midiHistory = new List<int>(); // List to store recent MIDI values for smoothing
+    private int midiSmoothingWindow = 5;  // Number of recent MIDI values to average for smoothing
+    public float onsetThreshold = 0.2f;   // Threshold to detect the onset of a new note
+
+    void Start()
+    {
+        theyPlayed.frets = new int?[4, 6]; // Initialize the frets array in the TheyPlayed object
+
+        audioInterface = GetComponent<AudioSource>();
+
+        if (Microphone.devices.Length > 0)
         {
-            if (stringsPlayed[stringIndex])
+            selectedMic = Microphone.devices[0]; // Pick the first available microphone
+            Debug.Log($"Selected microphone: {selectedMic}");
+
+            currentClip = Microphone.Start(selectedMic, true, 1, 44100);
+            audioInterface.clip = currentClip;
+            audioInterface.loop = true;
+            audioInterface.Play();
+
+            spectrumData = new float[spectrumSize]; // Initialize the spectrum data array
+        }
+        else
+        {
+            Debug.LogError("No microphone detected.");
+        }
+    }
+
+    void Update()
+    {
+        if (Microphone.IsRecording(selectedMic))
+        {
+            // Get current audio level (volume)
+            float level = GetAudioLevel();
+
+            // Apply windowing (Hanning window)
+            float[] buffer = new float[sampleWindow];
+            audioInterface.GetOutputData(buffer, 0);
+
+            // Perform FFT and get spectrum data
+            audioInterface.GetSpectrumData(spectrumData, 0, FFTWindow.Hanning);
+            // Display the spectrum data (frequency amplitudes)
+            for (int i = 0; i < spectrumSize; i++)
             {
-                bool hasFingerOnFret = false;
-                for (int fretIndex = 0; fretIndex < 4; fretIndex++)
-                {
-                    if (theyPlayed.frets[fretIndex, stringIndex] == 1)
-                    {
-                        hasFingerOnFret = true;
-                        break;
-                    }
-                }
-                if (!hasFingerOnFret)
-                {
-                    // String is being played open
-                    theyPlayed.frets[0, stringIndex] = 0;
-                }
+                // Log the amplitude value of each frequency band
+                // Debug.Log($"Frequency Band {i}: Amplitude = {spectrumData[i]}");
+            }
+
+            // Onset detection
+            if (DetectOnset(level))
+            {
+                // Perform peak detection on the FFT data
+                float dominantFrequency = PerformPeakDetection();
+                int midiNote = FrequencyToMidi(dominantFrequency);
+                string noteName = MidiToNoteName(midiNote);
+
+                Debug.Log($"{dominantFrequency}, {midiNote}, {noteName}");
+
+                // Apply temporal smoothing
+                int smoothedMidiNote = ApplyTemporalSmoothing(midiNote);
+                noteName = MidiToNoteName(smoothedMidiNote);
+
+                Debug.Log($"{smoothedMidiNote}, {noteName}");
+
+                // Update TheyPlayed object
+                theyPlayed.isNewNote = true;
+                theyPlayed.isBeingPlayed = noteName;
+
+                // Log results
+                Debug.Log($"Detected note: {noteName}");
             }
             else
             {
-                // String is not being played
-                for (int fretIndex = 0; fretIndex < 4; fretIndex++)
+                theyPlayed.isNewNote = false;
+            }
+
+            previousBuffer = buffer; // Save buffer for next iteration
+        }
+    }
+
+
+    // Apply Hanning window to the buffer
+    float[] ApplyWindowing()
+    {
+        float[] buffer = new float[sampleWindow];
+        audioInterface.GetOutputData(buffer, 0);
+        float[] windowedBuffer = new float[sampleWindow];
+
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            // Applying the Hanning window
+            float hanningValue = 0.5f * (1 - Mathf.Cos(2 * Mathf.PI * i / (buffer.Length - 1)));
+            windowedBuffer[i] = buffer[i] * hanningValue;
+        }
+
+        return windowedBuffer;
+    }
+
+    // Perform onset detection by comparing current and previous volume levels
+    bool DetectOnset(float currentLevel)
+    {
+        Debug.Log("DetectOnset()");
+        float previousLevel = previousBuffer.Average();
+
+        return Mathf.Abs(currentLevel - previousLevel) > onsetThreshold;
+    }
+
+
+    // Perform peak detection to find the dominant frequency
+    float PerformPeakDetection()
+    {
+        // Apply smoothing to the spectrum data before peak detection
+        float[] smoothedSpectrum = SmoothSpectrum(spectrumData);
+
+        // Perform peak detection with a sliding window
+        float maxAmplitude = 0f;
+        int maxIndex = 0;
+
+        // Define a window size for peak detection (e.g., 5 neighboring values)
+        int windowSize = 5;
+
+        for (int i = windowSize; i < smoothedSpectrum.Length - windowSize; i++)
+        {
+            bool isPeak = true;
+
+            // Check if the current value is greater than its neighboring values
+            for (int j = 1; j <= windowSize; j++)
+            {
+                if (smoothedSpectrum[i] <= smoothedSpectrum[i - j] || smoothedSpectrum[i] <= smoothedSpectrum[i + j])
                 {
-                    theyPlayed.frets[fretIndex, stringIndex] = null;
+                    isPeak = false;
+                    break;
                 }
             }
-        }
 
-        // Set isBeingPlayed
-        if (isNote)
-        {
-            int midiNote = detectedMidiNotes[0];
-            string noteName = MidiNoteToName(midiNote);
-            theyPlayed.isBeingPlayed = noteName;
-        }
-        else if (isChord)
-        {
-            // Create chromagram
-            float[] chroma = CreateChromagram(spectrum);
-            string matchedChord = MatchChord(chroma);
-            theyPlayed.isBeingPlayed = matchedChord ?? "Unknown Chord";
-        }
-
-        // Output theyPlayed to game logic
-        ProcessTheyPlayed(theyPlayed);
-
-    }
-
-    float CalculateEnergy(float[] buffer)
-    {
-        Debug.Log("In CalculateEnergy()");
-        float energy = 0f;
-        foreach (var sample in buffer)
-        {
-            energy += sample * sample;
-        }
-        return energy / buffer.Length;
-    }
-
-    float CalculateAverageEnergy(List<float> energies)
-    {
-        Debug.Log("In CalculateAverageEnergy()");
-        float sum = 0f;
-        foreach (var energy in energies)
-        {
-            sum += energy;
-        }
-        return sum / energies.Count;
-    }
-
-    bool OnsetDetection(float bufferEnergy)
-    {
-        Debug.Log("In OnsetDetection()");
-        // Simple onset detection based on energy change
-        bool isNewNote = false;
-        if (averageEnergyList.Count > 0)
-        {
-            float energyChange = bufferEnergy - lastBufferEnergy;
-            if (energyChange > dynamicThreshold)
+            // If it's a peak, and its amplitude is greater than the current maximum, update the max
+            if (isPeak && smoothedSpectrum[i] > maxAmplitude)
             {
-                isNewNote = true;
-            }
-        }
-        lastBufferEnergy = bufferEnergy;
-        return isNewNote;
-    }
-
-    List<float> DetectPitches(float[] spectrum)
-    {
-        Debug.Log("In DetectPitches()");
-        List<float> peakFrequencies = new List<float>();
-
-        // Simple peak detection
-        float threshold = 0.01f; // Adjust as needed
-
-        for (int i = 1; i < spectrum.Length - 1; i++)
-        {
-            if (spectrum[i] > threshold && spectrum[i] > spectrum[i - 1] && spectrum[i] > spectrum[i + 1])
-            {
-                // Convert bin index to frequency
-                float freq = i * sampleRate / 2f / spectrum.Length;
-                peakFrequencies.Add(freq);
+                maxAmplitude = smoothedSpectrum[i];
+                maxIndex = i;
             }
         }
 
-        // Sort peaks by amplitude descending
-        List<(float frequency, float amplitude)> peaks = new List<(float, float)>();
-        foreach (float freq in peakFrequencies)
-        {
-            int bin = (int)(freq * spectrum.Length * 2 / sampleRate);
-            float amplitude = spectrum[bin];
-            peaks.Add((freq, amplitude));
-        }
-
-        peaks.Sort((a, b) => b.amplitude.CompareTo(a.amplitude));
-
-        // Limit to top 6 peaks (max number of strings)
-        int N = 6;
-        List<float> detectedFrequencies = new List<float>();
-        for (int i = 0; i < Mathf.Min(N, peaks.Count); i++)
-        {
-            detectedFrequencies.Add(peaks[i].frequency);
-        }
-
-        return detectedFrequencies;
+        // Calculate the dominant frequency from the index of the detected peak
+        float dominantFrequency = maxIndex * AudioSettings.outputSampleRate / 2 / spectrumSize;
+        return dominantFrequency;
     }
 
-    string MidiNoteToName(int midiNote)
+    float[] SmoothSpectrum(float[] spectrumData)
     {
-        string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-        int noteIndex = midiNote % 12;
-        int octave = (midiNote / 12) - 1;
-        return noteNames[noteIndex] + octave;
-    }
+        // Use a simple moving average to smooth the spectrum data
+        int smoothWindowSize = 3;  // Adjust the window size to control the level of smoothing
+        float[] smoothedSpectrum = new float[spectrumData.Length];
 
-    float[] CreateChromagram(float[] spectrum)
-    {
-        Debug.Log("In CreateChromagram()");
-        float[] chroma = new float[12];
-        for (int i = 0; i < spectrum.Length; i++)
+        for (int i = 0; i < spectrumData.Length; i++)
         {
-            float freq = (float)i * sampleRate / 2f / spectrum.Length;
-            if (freq < 20f || freq > 5000f)
-                continue;
+            float sum = 0f;
+            int count = 0;
 
-            // Calculate pitch class
-            float noteNumber = 12f * Mathf.Log(freq / 440f, 2f) + 69f;
-            int midiNote = Mathf.RoundToInt(noteNumber);
-            int pitchClass = midiNote % 12;
-
-            chroma[pitchClass] += spectrum[i];
-        }
-        return chroma;
-    }
-
-    string MatchChord(float[] chroma)
-    {
-        Debug.Log("In MatchChord()");
-        // Normalize chroma vector
-        float chromaSum = 0f;
-        foreach (float value in chroma)
-            chromaSum += value;
-
-        if (chromaSum == 0f)
-            return null;
-
-        for (int i = 0; i < chroma.Length; i++)
-            chroma[i] /= chromaSum;
-
-        // Compare chroma to chord maps
-        string bestMatch = null;
-        float bestCorrelation = 0f;
-
-        foreach (var chordMap in chordMaps)
-        {
-            float correlation = 0f;
-            for (int i = 0; i < chroma.Length; i++)
+            // Calculate the average within the smoothing window
+            for (int j = -smoothWindowSize; j <= smoothWindowSize; j++)
             {
-                correlation += chroma[i] * chordMap.Value[i];
+                int index = i + j;
+                if (index >= 0 && index < spectrumData.Length)
+                {
+                    sum += spectrumData[index];
+                    count++;
+                }
             }
 
-            if (correlation > bestCorrelation)
-            {
-                bestCorrelation = correlation;
-                bestMatch = chordMap.Key;
-            }
+            smoothedSpectrum[i] = sum / count;
         }
 
-        if (bestCorrelation > tolerance)
-            return bestMatch;
-
-        return null;
-    }
-
-    float[] TemporalSmoothing(Queue<float[]> buffers)
-    {
-        Debug.Log("In TemporalSmoothing()");
-        // Average the spectra
-        float[] smoothedSpectrum = new float[bufferSize];
-        foreach (var buffer in buffers)
-        {
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                smoothedSpectrum[i] += buffer[i];
-            }
-        }
-        for (int i = 0; i < smoothedSpectrum.Length; i++)
-        {
-            smoothedSpectrum[i] /= buffers.Count;
-        }
         return smoothedSpectrum;
     }
 
-    void ProcessTheyPlayed(TheyPlayed theyPlayed)
+
+
+
+    // Convert detected frequency to MIDI note number
+    int FrequencyToMidi(float frequency)
     {
-        // Implement game logic processing here
-        Debug.Log(theyPlayed);
+        Debug.Log("FrequencyToMidi()");
+        if (frequency <= 0) return -1;
+        float midiNoteFloat = 12 * Mathf.Log(frequency / referenceFrequency, 2) + 69;
+        return Mathf.RoundToInt(midiNoteFloat);
+    }
+
+    // Convert MIDI note to note name and octave
+    string MidiToNoteName(int midiNote)
+    {
+        if (midiNote < 0)
+        {
+            return "Unknown";  // Return "Unknown" if midiNote is invalid
+        }
+
+        int noteIndex = (midiNote - 12) % 12;
+
+        // Ensure the noteIndex is positive (handle negative modulus results)
+        if (noteIndex < 0)
+        {
+            noteIndex += 12;
+        }
+
+        int octave = (midiNote / 12) - 1;  // Octave calculation
+
+        // Ensure the noteIndex is valid before accessing the noteNames array
+        return noteNames[noteIndex] + octave;
+    }
+
+
+    // Apply temporal smoothing by averaging recent MIDI notes
+    int ApplyTemporalSmoothing(int midiNote)
+    {
+        Debug.Log("ApplyTemporalSmoothing()");
+        midiHistory.Add(midiNote);
+
+        if (midiHistory.Count > midiSmoothingWindow)
+        {
+            midiHistory.RemoveAt(0);
+        }
+
+        return Mathf.RoundToInt((float)midiHistory.Average());
+    }
+
+    float[] NormalizeAudioLevel(float[] data, float targetLevel = 1.0f)
+    {
+        Debug.Log("NormalizeAudioLevel()");
+        float maxAmplitude = data.Max();
+        if (maxAmplitude > 0)
+        {
+            float normalizationFactor = targetLevel / maxAmplitude;
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] *= normalizationFactor;  // Scale the audio data
+            }
+        }
+        return data;
+    }
+
+
+
+    // Get the current audio level (volume)
+    float GetAudioLevel()
+    {
+        float[] data = new float[sampleWindow];
+        int micPosition = Microphone.GetPosition(selectedMic) - sampleWindow + 1;
+        if (micPosition < 0) return 0;
+
+        currentClip.GetData(data, micPosition);
+
+        // Normalize the data to boost quiet audio
+        data = NormalizeAudioLevel(data, targetLevel: 1.0f);
+
+        // Calculate the average level of the audio samples
+        float sum = 0;
+        for (int i = 0; i < sampleWindow; i++)
+        {
+            sum += Mathf.Abs(data[i]);
+        }
+
+        return sum / sampleWindow;
+    }
+
+    void OnDisable()
+    {
+        // Stop the microphone recording when the object is disabled or destroyed
+        if (Microphone.IsRecording(selectedMic))
+        {
+            Microphone.End(selectedMic);
+            Debug.Log("Microphone recording stopped.");
+        }
     }
 }
