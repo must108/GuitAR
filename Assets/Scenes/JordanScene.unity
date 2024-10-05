@@ -3923,7 +3923,9 @@ MonoBehaviour:
   defaultColor: {r: 0.09411766, g: 0.7607844, b: 0.909804, a: 0}
   incorrect: {r: 1, g: 0, b: 0, a: 0}
   correct: {r: 0.13689566, g: 0.83396226, b: 0.17831825, a: 0}
-  test: 0
+  setCorrect: 0
+  setIncorrect: 0
+  setDefault: 0
   text: {fileID: 1026348461}
 --- !u!135 &1661697618
 SphereCollider:

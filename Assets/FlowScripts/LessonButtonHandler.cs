@@ -10,17 +10,17 @@ using UnityEngine.UI;
 public class LessonButtonHandler : MonoBehaviour {
     public void OnLessonButtonClick() {
         string buttonName = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name;
-        Debug.Log("Button clicked: ", buttonName);
+        //Debug.Log("Button clicked: ", buttonName);
 
-        if (buttonName === "Lesson1Button") {
+        if (buttonName == "Lesson1Button") {
             SceneManager.LoadScene("Lesson1");
-        } else if (buttonName === "Lesson2Button") {
+        } else if (buttonName == "Lesson2Button") {
             SceneManager.LoadScene("Lesson2");
-        } else if (buttonName === "Lesson3Button") {
+        } else if (buttonName == "Lesson3Button") {
             SceneManager.LoadScene("Lesson3");
-        } else if (buttonName === "Lesson4Button") {
+        } else if (buttonName == "Lesson4Button") {
             SceneManager.LoadScene("Lesson4");
-        } else if (buttonName === "Lesson5Button") {
+        } else if (buttonName == "Lesson5Button") {
             SceneManager.LoadScene("Lesson5");
         } else {
             Debug.Log("Usage error!");
