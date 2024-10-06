@@ -44,6 +44,7 @@ public class MenuManager : MonoBehaviour
     {
         lessonMenu.SetActive(false);
         songLessonMenu.SetActive(true);
+        guitar.SetActive(true);
         Debug.Log("Start Song Lesson");
     }
 }

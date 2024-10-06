@@ -62,6 +62,7 @@ public class LessonManager : MonoBehaviour
         if (abort)
         {
             abort = false;
+            lessonDisplayNote.setText("Play This Note!");
             lessonPlaying = false;
             LoadFretPositions(new int[,]{
                 { 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0, 0},
