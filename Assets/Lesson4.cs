@@ -1,6 +1,6 @@
 // G major scale
 
-public class Lesson4 : Lesson {
+public class Lesson4 : Music {
     private static readonly float interval = 1f;
 
     private static readonly string[] Lesson4Notes = {

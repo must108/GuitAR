@@ -1,5 +1,5 @@
 // C major scale
-public class Lesson3 : Lesson {
+public class Lesson3 : Music {
     private static readonly float interval = 1f;
 
     private static readonly string[] Lesson3Notes = {

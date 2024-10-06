@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Last three strings tutorial
-public class Lesson2 : Lesson {
+public class Lesson2 : Music {
     private static float interval = 2f;
 
     private static readonly string[] Lesson2Notes = {

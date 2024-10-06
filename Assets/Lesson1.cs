@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // First three strings tutorial
-public class Lesson1 : Lesson {
+public class Lesson1 : Music {
     private static float interval = 1f;
 
     private static readonly string[] Lesson1Notes = {
