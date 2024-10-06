@@ -630,7 +630,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 005179ffc7d519642b27a2dcfafa3942, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  threshold: 0.2
+  threshold: 0.17
   bufferSize: 4096
   noteBufferSize: 5
 --- !u!1001 &823458164
