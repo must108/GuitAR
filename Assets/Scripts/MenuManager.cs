@@ -6,6 +6,9 @@ public class MenuManager : MonoBehaviour
 {
     [SerializeField] public GameObject playMenu;
     [SerializeField] public GameObject lessonMenu;
+
+    [SerializeField] public GameObject playMenuGrabber;
+    [SerializeField] public GameObject lessonMenuGrabber;
     // MENU_STATE = 0: Main Menu, 1: Lesson Selector
     [SerializeField] public int MENU_STATE = 0;
 
@@ -16,6 +19,9 @@ public class MenuManager : MonoBehaviour
 
         playMenu.SetActive(true);
         lessonMenu.SetActive(false);
+
+        playMenuGrabber.SetActive(true);
+        lessonMenuGrabber.SetActive(false);
     }
 
     // Update is called once per frame
@@ -28,6 +34,9 @@ public class MenuManager : MonoBehaviour
     {
         playMenu.SetActive(true);
         lessonMenu.SetActive(false);
+
+        playMenuGrabber.SetActive(true);
+        lessonMenuGrabber.SetActive(false);
         MENU_STATE = 0;
     }
 
@@ -35,12 +44,16 @@ public class MenuManager : MonoBehaviour
     {
         playMenu.SetActive(false);
         lessonMenu.SetActive(true);
+
+        playMenuGrabber.SetActive(false);
+        lessonMenuGrabber.SetActive(true);
         MENU_STATE = 1;
     }
 
     public void StartSimpleLesson()
     {
         lessonMenu.SetActive(false);
+        lessonMenuGrabber.SetActive(false);
         MENU_STATE = 2;
         Debug.Log("Start Simple Lesson");
     }
@@ -48,6 +61,7 @@ public class MenuManager : MonoBehaviour
     public void StartSongLesson()
     {
         lessonMenu.SetActive(false);
+        lessonMenuGrabber.SetActive(false);
         MENU_STATE = 2;
         Debug.Log("Start Song Lesson");
     }
@@ -55,6 +69,7 @@ public class MenuManager : MonoBehaviour
     public void StartCustomSongLesson()
     {
         lessonMenu.SetActive(false);
+        lessonMenuGrabber.SetActive(false);
         MENU_STATE = 2;
         Debug.Log("Start Custom Song Lesson");
     }
