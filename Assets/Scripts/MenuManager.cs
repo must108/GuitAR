@@ -6,71 +6,42 @@ public class MenuManager : MonoBehaviour
 {
     [SerializeField] public GameObject playMenu;
     [SerializeField] public GameObject lessonMenu;
-
-    [SerializeField] public GameObject playMenuGrabber;
-    [SerializeField] public GameObject lessonMenuGrabber;
-    // MENU_STATE = 0: Main Menu, 1: Lesson Selector
-    [SerializeField] public int MENU_STATE = 0;
+    [SerializeField] public GameObject simpleLessonMenu;
+    [SerializeField] public GameObject songLessonMenu;
+    [SerializeField] GameObject guitar;
 
     // Start is called before the first frame update
     void Start()
     {
-        MENU_STATE = 0;
-
         playMenu.SetActive(true);
         lessonMenu.SetActive(false);
-
-        playMenuGrabber.SetActive(true);
-        lessonMenuGrabber.SetActive(false);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 
     public void PlayMenu()
     {
         playMenu.SetActive(true);
         lessonMenu.SetActive(false);
-
-        playMenuGrabber.SetActive(true);
-        lessonMenuGrabber.SetActive(false);
-        MENU_STATE = 0;
     }
 
-    public void LessonMenu() 
+    public void LessonMenu()
     {
         playMenu.SetActive(false);
         lessonMenu.SetActive(true);
-
-        playMenuGrabber.SetActive(false);
-        lessonMenuGrabber.SetActive(true);
-        MENU_STATE = 1;
+        guitar.SetActive(false);
     }
 
     public void StartSimpleLesson()
     {
         lessonMenu.SetActive(false);
-        lessonMenuGrabber.SetActive(false);
-        MENU_STATE = 2;
+        simpleLessonMenu.SetActive(true);
+        guitar.SetActive(true);
         Debug.Log("Start Simple Lesson");
     }
 
     public void StartSongLesson()
     {
         lessonMenu.SetActive(false);
-        lessonMenuGrabber.SetActive(false);
-        MENU_STATE = 2;
+        songLessonMenu.SetActive(true);
         Debug.Log("Start Song Lesson");
-    }
-
-    public void StartCustomSongLesson()
-    {
-        lessonMenu.SetActive(false);
-        lessonMenuGrabber.SetActive(false);
-        MENU_STATE = 2;
-        Debug.Log("Start Custom Song Lesson");
     }
 }
