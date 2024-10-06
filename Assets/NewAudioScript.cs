@@ -1,15 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
+//using Debug = UnityEngine.Debug;
 using System.Linq; // Required for using LINQ (for averaging the list)
-using System.Diagnostics;
+//using System.Diagnostics;
 
 public class TheyPlayed
 {
-    public bool isNewNote;      // True when a new strum is detected
-    public string isBeingPlayed;  // The musical note being played (e.g., "C#4")
-    public int?[,] frets;       // Array to represent 4 frets and 6 strings. Each index is a string, each row is a fret.
+    protected string isBeingPlayed;  // The musical note being played (e.g., "C#4")
+    protected int?[,] frets;       // Array to represent 4 frets and 6 strings. Each index is a string, each row is a fret.
 
     // Constructor to initialize the frets array
     public TheyPlayed()
@@ -56,7 +55,132 @@ public class TheyPlayed
             fretsString += "\n"; // Newline after each fret
         }
 
-        return $"TheyPlayed [isNewNote={isNewNote}, frets=\n{fretsString}, isBeingPlayed='{isBeingPlayed}']";
+        return $"TheyPlayed [isBeingPlayed='{isBeingPlayed}', frets=\n{fretsString}]";
+    }
+
+    public TheyPlayed GetTheyPlayed()
+    {
+        // Create a new TheyPlayed object
+        TheyPlayed copy = new TheyPlayed();
+
+        // Copy the isBeingPlayed value
+        copy.setIsBeingPlayed(this.isBeingPlayed);
+
+        // Copy the frets array
+        for (int fret = 0; fret < 4; fret++)
+        {
+            for (int stringIndex = 0; stringIndex < 6; stringIndex++)
+            {
+                copy.frets[fret, stringIndex] = this.frets[fret, stringIndex];
+            }
+        }
+
+        // Return the copy
+        return copy;
+    }
+
+    public void setIsBeingPlayed(string note)
+    {
+        isBeingPlayed = note;
+    }
+
+    public void MapNoteNameToFretArray(string noteName)
+    {
+        int fretCount = 4; // Frets 1 to 4
+
+        // Reset the frets array
+        ResetFrets();
+
+        // Mapping note names to their positions on the fretboard
+        // Each note maps to a list of positions (stringIndex, fret)
+        Dictionary<string, List<(int stringIndex, int fret)>> notePositions = new Dictionary<string, List<(int, int)>>()
+    {
+        // String 6 (Low E string), index 0
+        { "E2", new List<(int, int)>{ (0, -1) } },
+        { "F2", new List<(int, int)>{ (0, 0) } },
+        { "F#2", new List<(int, int)>{ (0, 1) } },
+        { "G2", new List<(int, int)>{ (0, 2) } },
+        { "G#2", new List<(int, int)>{ (0, 3) } },
+
+        // String 5 (A string), index 1
+        { "A2", new List<(int, int)>{ (1, -1) } },
+        { "A#2", new List<(int, int)>{ (1, 0) } },
+        { "B2", new List<(int, int)>{ (1, 1) } },
+        { "C3", new List<(int, int)>{ (1, 2) } },
+        { "C#3", new List<(int, int)>{ (1, 3) } },
+
+        // String 4 (D string), index 2
+        { "D3", new List<(int, int)>{ (2, -1) } },
+        { "D#3", new List<(int, int)>{ (2, 0) } },
+        { "E3", new List<(int, int)>{ (2, 1) } },
+        { "F3", new List<(int, int)>{ (2, 2) } },
+        { "F#3", new List<(int, int)>{ (2, 3) } },
+
+        // String 3 (G string), index 3
+        { "G3", new List<(int, int)>{ (3, -1) } },
+        { "G#3", new List<(int, int)>{ (3, 0) } },
+        { "A3", new List<(int, int)>{ (3, 1) } },
+        { "A#3", new List<(int, int)>{ (3, 2) } },
+        { "B3", new List<(int, int)>{ (4, -1) } }, // B3 on String 3 and String 2
+
+        // String 2 (B string), index 4
+        { "C4", new List<(int, int)>{ (4, 0) } },
+        { "C#4", new List<(int, int)>{ (4, 1) } },
+        { "D4", new List<(int, int)>{ (4, 2) } },
+        { "D#4", new List<(int, int)>{ (4, 3) } },
+
+        // String 1 (High E string), index 5
+        { "E4", new List<(int, int)>{ (5, -1) } },
+        { "F4", new List<(int, int)>{ (5, 0) } },
+        { "F#4", new List<(int, int)>{ (5, 1) } },
+        { "G4", new List<(int, int)>{ (5, 2) } },
+        { "G#4", new List<(int, int)>{ (5, 3) } },
+    };
+
+        // Check if the note exists in the dictionary
+        if (notePositions.TryGetValue(noteName, out List<(int stringIndex, int fret)> positions))
+        {
+            // Select the position with the lowest fret number
+            var selectedPosition = positions.OrderBy(pos => pos.fret == -1 ? 0 : pos.fret).First();
+
+            int stringIndex = selectedPosition.stringIndex;
+            int fret = selectedPosition.fret;
+
+            if (fret == -1)
+            {
+                // Open string: populate the entire column with 0s
+                for (int f = 0; f < fretCount; f++)
+                {
+                    UpdateFret(f, stringIndex, 0);
+                }
+            }
+            else
+            {
+                // String is played: populate with 0s, set the fret to 1
+                for (int f = 0; f < fretCount; f++)
+                {
+                    UpdateFret(f, stringIndex, 0);
+                }
+                UpdateFret(fret, stringIndex, 1); // Finger on the specific fret
+            }
+
+            // Set other strings to null (not played)
+            for (int s = 0; s < 6; s++)
+            {
+                if (s != stringIndex)
+                {
+                    for (int f = 0; f < fretCount; f++)
+                    {
+                        UpdateFret(f, s, null);
+                    }
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Note {noteName} not found within the first four frets.");
+            ResetFrets(); // Ensure frets are reset if note is not found
+        }
     }
 }
 
@@ -68,8 +192,8 @@ public class NewAudioScript : MonoBehaviour
     private AudioSource audioInterface;
     private string selectedMic;
 
-    public float threshold = 0.0075f; // Adjust as needed
-    public int bufferSize = 8192;
+    public float threshold = 0.17f; // Adjust as needed
+    public int bufferSize = 4096;
     private float[] audioBuffer; // Time domain buffer, freqs over time
                                  // Frequencies of guitar notes from E2 to E6
     private float[] guitarFrequencies = {
@@ -88,7 +212,7 @@ public class NewAudioScript : MonoBehaviour
     "G#5", "A5", "A#5", "B5", "C6", "C#6", "D6", "D#6", "E6"
 };
 
-    private TheyPlayed theyPlayed = new TheyPlayed(); // Instance of the TheyPlayed class
+    public TheyPlayed theyPlayed = new TheyPlayed(); // Instance of the TheyPlayed class
 
     // Variables for temporal smoothing and peak detection
     private Queue<string> recentNotes = new Queue<string>();
@@ -97,26 +221,46 @@ public class NewAudioScript : MonoBehaviour
     {
         audioInterface = GetComponent<AudioSource>();
 
-        if (Microphone.devices.Length > 0)
+        string primaryMicName = "Analogue 1 + 2 (Focusrite USB Audio)";
+        string secondaryMicName = "Default Microphone";
+
+        string[] availableMics = Microphone.devices;
+
+        if (availableMics.Length == 0)
         {
-            selectedMic = "Analogue 1 + 2 (Focusrite USB Audio)"; // Pick the first available microphone
-            Debug.Log($"Selected microphone: {selectedMic}");
+            Debug.LogError("No microphone detected.");
+            return;
+        }
 
-            currentClip = Microphone.Start(selectedMic, true, 1, 44100);
-            audioInterface.clip = currentClip;
-            audioInterface.loop = true;
-            audioInterface.Play();
-
-            audioBuffer = new float[bufferSize];
+        if (availableMics.Contains(primaryMicName))
+        {
+            selectedMic = primaryMicName;
+            Debug.Log($"Selected primary microphone: {selectedMic}");
+        }
+        else if (availableMics.Contains(secondaryMicName))
+        {
+            selectedMic = secondaryMicName;
+            Debug.Log($"Selected secondary microphone: {selectedMic}");
         }
         else
         {
-            Debug.LogError("No microphone detected.");
+            selectedMic = availableMics[0];
+            Debug.Log($"Selected default microphone: {selectedMic}");
         }
+
+        currentClip = Microphone.Start(selectedMic, true, 1, 44100);
+        audioInterface.clip = currentClip;
+        audioInterface.loop = true;
+        audioInterface.Play();
+
+        audioBuffer = new float[bufferSize];
+
     }
 
     void Update()
     {
+        //Stopwatch stopwatch = new Stopwatch();
+        //stopwatch.Start();
         if (Microphone.IsRecording(selectedMic))
         {
             int micPosition = Microphone.GetPosition(selectedMic) - bufferSize;
@@ -126,14 +270,8 @@ public class NewAudioScript : MonoBehaviour
 
             ApplyHanningWindow(audioBuffer);
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            float fundamentalFrequency = DetectFundamentalFrequencyYIN(audioBuffer);
             // new peak detection!!
-            stopwatch.Stop();
-            long timeTaken = stopwatch.ElapsedMilliseconds;
-            Debug.Log($"YIN algorithm execution time: {timeTaken} ms");
+            float fundamentalFrequency = DetectFundamentalFrequencyYIN(audioBuffer);
 
             string noteName = "Unknown";
 
@@ -162,12 +300,17 @@ public class NewAudioScript : MonoBehaviour
 
 
             // Update TheyPlayed object
-            theyPlayed.isNewNote = true;
-            theyPlayed.isBeingPlayed = mostCommonNote;
-
+            theyPlayed.setIsBeingPlayed(mostCommonNote);
+            theyPlayed.MapNoteNameToFretArray(mostCommonNote);
+            // TheyPlayed testy = theyPlayed.GetTheyPlayed();
 
 
             Debug.Log($"Final Detected note: {mostCommonNote}");
+            Debug.Log(theyPlayed.ToString());
+            // Debug.Log(testy.ToString());
+            //stopwatch.Stop();
+            //long timeTaken = stopwatch.ElapsedMilliseconds;
+            //Debug.Log($"Audio Script execution time: {timeTaken} ms");
         }
     }
 
