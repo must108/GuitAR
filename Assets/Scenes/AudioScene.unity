@@ -630,7 +630,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 005179ffc7d519642b27a2dcfafa3942, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sampleWindow: 128
+  thresholdAmplitude: 0.0000002
   spectrumSize: 1024
   spectrumData: []
   referenceFrequency: 440
@@ -647,7 +647,6 @@ MonoBehaviour:
   - A
   - A#
   - B
-  onsetThreshold: 0.03
 --- !u!1001 &823458164
 PrefabInstance:
   m_ObjectHideFlags: 0
