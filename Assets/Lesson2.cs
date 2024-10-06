@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Last three strings tutorial
 public class Lesson2 : Lesson {
     private static float interval = 2f;
 
