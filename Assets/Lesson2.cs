@@ -1,6 +1,8 @@
 using UnityEngine;
 
 public class Lesson2 : Lesson {
+    private static float interval = 2f;
+
     private static readonly string[] Lesson2Notes = {
         "D", "D#", "E", "F", "F#",
         "A", "A#", "B", "C", "C#",
@@ -121,5 +123,9 @@ public class Lesson2 : Lesson {
 
     public override int[][,] GetFretPositions() {
         return Lesson2Objects;
+    }
+
+    public override float GetInterval() {
+        return interval;
     }
 }   

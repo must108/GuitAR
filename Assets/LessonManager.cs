@@ -8,7 +8,7 @@ public class LessonManager : MonoBehaviour {
     public int[][,] currentFretPositions;
     private int count = 0;
     private float timer = 0f;
-    private float interval = 1f;
+    private float interval;
 
     public void LoadFretPositions(int[,] fretArray) {
         // Loop through all children of this GameObject
@@ -29,6 +29,7 @@ public class LessonManager : MonoBehaviour {
         currentLesson = lesson;
         currentNotes = currentLesson.GetNotes();
         currentFretPositions = currentLesson.GetFretPositions();
+        interval = currentLesson.GetInterval();
         count = 0;
         LoadFretPositions(currentFretPositions[count]);
     }
