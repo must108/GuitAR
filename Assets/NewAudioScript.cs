@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using System.Linq; // Required for using LINQ (for averaging the list)
+using System.Diagnostics;
 
 public class TheyPlayed
 {
@@ -66,15 +68,10 @@ public class NewAudioScript : MonoBehaviour
     private AudioSource audioInterface;
     private string selectedMic;
 
-
-    public int bufferSize = 2048;
+    public float threshold = 0.0075f; // Adjust as needed
+    public int bufferSize = 8192;
     private float[] audioBuffer; // Time domain buffer, freqs over time
-    public float thresholdAmplitude = 0.000001f; // Adjust this value based on your microphone sensitivity
-    public int spectrumSize = 4096; // The size of the spectrum for frequency analysis
-    public float[] spectrumData; // The array to store spectrum data for frequency analysis
-    public float referenceFrequency = 440.0f; // A4 reference frequency for tuning, 440 Hz
-    public string[] noteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" }; // Note names for MIDI values
-                                                                                                     // Frequencies of guitar notes from E2 to E6
+                                 // Frequencies of guitar notes from E2 to E6
     private float[] guitarFrequencies = {
     82.41f, 87.31f, 92.50f, 98.00f, 103.83f, 110.00f, 116.54f, 123.47f, 130.81f, 138.59f,
     146.83f, 155.56f, 164.81f, 174.61f, 185.00f, 196.00f, 207.65f, 220.00f, 233.08f, 246.94f,
@@ -94,17 +91,15 @@ public class NewAudioScript : MonoBehaviour
     private TheyPlayed theyPlayed = new TheyPlayed(); // Instance of the TheyPlayed class
 
     // Variables for temporal smoothing and peak detection
-    public Queue<float[]> spectrumHistory;
-    private int smoothingWindow = 5;  // Number of recent values to average for smoothing
-
+    private Queue<string> recentNotes = new Queue<string>();
+    public int noteBufferSize = 5;
     void Start()
     {
-
         audioInterface = GetComponent<AudioSource>();
 
         if (Microphone.devices.Length > 0)
         {
-            selectedMic = Microphone.devices[0]; // Pick the first available microphone
+            selectedMic = "Analogue 1 + 2 (Focusrite USB Audio)"; // Pick the first available microphone
             Debug.Log($"Selected microphone: {selectedMic}");
 
             currentClip = Microphone.Start(selectedMic, true, 1, 44100);
@@ -113,8 +108,6 @@ public class NewAudioScript : MonoBehaviour
             audioInterface.Play();
 
             audioBuffer = new float[bufferSize];
-            spectrumData = new float[spectrumSize]; // Initialize the spectrum data array
-            spectrumHistory = new Queue<float[]>();
         }
         else
         {
@@ -131,116 +124,139 @@ public class NewAudioScript : MonoBehaviour
 
             currentClip.GetData(audioBuffer, micPosition);
 
-            // Perform FFT and get spectrum data
-            audioInterface.GetSpectrumData(spectrumData, 0, FFTWindow.Hanning);
+            ApplyHanningWindow(audioBuffer);
 
-            // Queue to store the spectrum history
-            // Add the current spectrum data to the history
-            if (spectrumHistory.Count >= smoothingWindow)
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            float fundamentalFrequency = DetectFundamentalFrequencyYIN(audioBuffer);
+            // new peak detection!!
+            stopwatch.Stop();
+            long timeTaken = stopwatch.ElapsedMilliseconds;
+            Debug.Log($"YIN algorithm execution time: {timeTaken} ms");
+
+            string noteName = "Unknown";
+
+            if (fundamentalFrequency > 0)
             {
-                spectrumHistory.Dequeue();  // Remove the oldest frame
-            }
-            spectrumHistory.Enqueue((float[])spectrumData.Clone());
-
-            // Apply temporal smoothing to the spectrum data
-            float[] smoothedSpectrum = ApplyTemporalSmoothing(spectrumHistory);
-
-            // Perform peak detection on the FFT data
-            string noteName = PerformPeakDetection(smoothedSpectrum);
-
-            if (noteName == "Unknown")
-            {
-                Debug.LogWarning("Unknown note detected");
+                noteName = MapFrequencyToNoteName(fundamentalFrequency);
             }
             else
             {
-                Debug.Log($"Final Detected note: {noteName}");
+                Debug.LogWarning("No valid frequency detected.");
             }
+
+
+            // Temporal smoothing time!
+            recentNotes.Enqueue(noteName);
+            if (recentNotes.Count > noteBufferSize)
+            {
+                recentNotes.Dequeue();
+            }
+
+            string mostCommonNote = recentNotes
+                .GroupBy(n => n)
+                .OrderByDescending(g => g.Count())
+                .First()
+                .Key;
+
 
             // Update TheyPlayed object
             theyPlayed.isNewNote = true;
-            theyPlayed.isBeingPlayed = noteName;
+            theyPlayed.isBeingPlayed = mostCommonNote;
+
+
+
+            Debug.Log($"Final Detected note: {mostCommonNote}");
         }
     }
 
-
-    // Function to perform temporal smoothing
-    float[] ApplyTemporalSmoothing(Queue<float[]> history)
+    void ApplyHanningWindow(float[] buffer)
     {
-        float[] smoothed = new float[spectrumSize];
-
-        // Iterate through the history to calculate the average spectrum data
-        foreach (float[] frame in history)
+        int length = buffer.Length;
+        for (int i = 0; i < length; i++)
         {
-            for (int i = 0; i < spectrumSize; i++)
-            {
-                smoothed[i] += frame[i];
-            }
+            buffer[i] *= 0.5f * (1 - Mathf.Cos(2 * Mathf.PI * i / (length - 1)));
         }
-
-        // Divide by the number of frames in history to get the average
-        for (int i = 0; i < spectrumSize; i++)
-        {
-            smoothed[i] /= history.Count;
-        }
-
-        return smoothed;
     }
 
-
-    string PerformPeakDetection(float[] spectrumData)
+    float DetectFundamentalFrequencyYIN(float[] buffer)
     {
-        int windowSize = 3;
-        float fundamentalFrequency = 0f;
-        int fundamentalIndex = -1;
-        float fundamentalAmplitude = 0f;
+        int sampleRate = 44100;
+        int tauMax = buffer.Length / 2;
+        float[] differenceFunction = new float[tauMax];
+        float[] cumulativeMeanNormalizedDifference = new float[tauMax];
+        int tauEstimate = -1;
 
-        // Iterate over the spectrum data within the guitar frequency range
-        for (int i = windowSize; i < spectrumData.Length - windowSize; i++)
+        // Step 1: Difference function
+        for (int tau = 1; tau < tauMax; tau++)
         {
-            float frequency = i * AudioSettings.outputSampleRate / 2 / spectrumSize;
-
-            if (frequency >= 82.0f && frequency <= 1318.0f)
+            float sum = 0f;
+            for (int j = 0; j < buffer.Length - tau; j++)
             {
-                // Check if the current bin is a peak
-                bool isPeak = true;
-                for (int j = 1; j <= windowSize; j++)
-                {
-                    if (spectrumData[i] <= spectrumData[i - j] || spectrumData[i] <= spectrumData[i + j])
-                    {
-                        isPeak = false;
-                        break;
-                    }
-                }
+                float diff = buffer[j] - buffer[j + tau];
+                sum += diff * diff;
+            }
+            differenceFunction[tau] = sum;
+        }
 
-                // Only consider peaks above the amplitude threshold
-                if (isPeak && spectrumData[i] > thresholdAmplitude)
+        // Step 2: Cumulative mean normalized difference function
+        cumulativeMeanNormalizedDifference[0] = 1;
+        float runningSum = 0f;
+        for (int tau = 1; tau < tauMax; tau++)
+        {
+            runningSum += differenceFunction[tau];
+            cumulativeMeanNormalizedDifference[tau] = differenceFunction[tau] / (runningSum / tau);
+        }
+
+        // Step 3: Absolute threshold
+        for (int tau = 2; tau < tauMax; tau++)
+        {
+            if (cumulativeMeanNormalizedDifference[tau] < threshold)
+            {
+                while (tau + 1 < tauMax && cumulativeMeanNormalizedDifference[tau + 1] < cumulativeMeanNormalizedDifference[tau])
                 {
-                    // Check if this peak is a potential fundamental frequency
-                    if (fundamentalIndex == -1 || frequency < fundamentalFrequency)
-                    {
-                        fundamentalFrequency = frequency;
-                        fundamentalIndex = i;
-                        fundamentalAmplitude = spectrumData[i];
-                    }
+                    tau++;
                 }
+                tauEstimate = tau;
+                break;
             }
         }
 
-        // If no fundamental frequency was found, return "Unknown"
-        if (fundamentalIndex == -1)
+        // Step 4: Parabolic interpolation
+        if (tauEstimate != -1)
         {
-            Debug.LogWarning("No valid frequency found within guitar range.");
-            return "Unknown";
+            float betterTau = tauEstimate;
+            if (tauEstimate > 0 && tauEstimate < cumulativeMeanNormalizedDifference.Length - 1)
+            {
+                float s0 = cumulativeMeanNormalizedDifference[tauEstimate - 1];
+                float s1 = cumulativeMeanNormalizedDifference[tauEstimate];
+                float s2 = cumulativeMeanNormalizedDifference[tauEstimate + 1];
+                betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+            }
+            else
+            {
+                betterTau = tauEstimate;
+            }
+            float fundamentalFrequency = sampleRate / betterTau;
+            return fundamentalFrequency;
         }
+        else
+        {
+            return -1f; // No pitch found
+        }
+    }
 
-        // Map the fundamental frequency to the closest note
+    string MapFrequencyToNoteName(float frequency)
+    {
+        if (frequency <= 0) return "Unknown";
+
         float minDifference = float.MaxValue;
         int closestIndex = -1;
 
         for (int i = 0; i < guitarFrequencies.Length; i++)
         {
-            float diff = Mathf.Abs(fundamentalFrequency - guitarFrequencies[i]);
+            float diff = Mathf.Abs(frequency - guitarFrequencies[i]);
             if (diff < minDifference)
             {
                 minDifference = diff;
@@ -258,8 +274,6 @@ public class NewAudioScript : MonoBehaviour
             return "Unknown";
         }
     }
-
-
 
     void OnDisable()
     {
