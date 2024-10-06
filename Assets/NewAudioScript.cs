@@ -17,6 +17,11 @@ public class TheyPlayed
         ResetFrets();
     }
 
+    public string GetIsBeingPlayed()
+    {
+        return isBeingPlayed;
+    }
+
     // Reset frets to all null values when needed
     public void ResetFrets()
     {

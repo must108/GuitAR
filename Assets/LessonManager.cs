@@ -1,5 +1,6 @@
 using System.Threading;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Video;
 
 public class LessonManager : MonoBehaviour
@@ -7,7 +8,12 @@ public class LessonManager : MonoBehaviour
     private Music currentLesson;
     private string[] currentNotes;
     private bool abort = false;
+    private bool lessonPlaying = false;
+    private bool isDone = false;
     [SerializeField] private GameObject guitarObjectSpheres;
+    [SerializeField] private DisplayNoteManager displayNote;
+
+    [SerializeField] private DisplayNoteManager lessonDisplayNote;
     private int count = 0;
     private float timer = 0f;
     public void Abort()
@@ -32,11 +38,22 @@ public class LessonManager : MonoBehaviour
         }
     }
 
+    public bool IsDone()
+    {
+        if (isDone)
+        {
+            isDone = false;
+            return true;
+        }
+        return false;
+    }
+
     public void LoadLesson(Music lesson)
     {
         currentLesson = lesson;
         currentNotes = currentLesson.GetNotes();
         count = 0;
+        lessonPlaying = true;
         LoadFretPositions(Music.NoteObjects[currentNotes[count]]);
     }
 
@@ -45,19 +62,37 @@ public class LessonManager : MonoBehaviour
         if (abort)
         {
             abort = false;
+            lessonPlaying = false;
             LoadFretPositions(new int[,]{
                 { 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0, 0},
             });
-
         }
-        if (count < currentNotes.Length)
+
+        if (lessonPlaying && currentNotes != null && count < currentNotes.Length)
         {
-            timer += Time.deltaTime;
-            if (timer >= Music.GetInterval())
+            lessonDisplayNote.setText(currentNotes[count]);
+            if (currentNotes[count].Equals(displayNote.getText()))
             {
-                count += 1;
-                LoadFretPositions(Music.NoteObjects[currentNotes[count]]);
-                timer = 0f;
+                displayNote.SetCorrect();
+                count++;
+                if (count >= currentNotes.Length)
+                {
+                    lessonDisplayNote.setText("Play This Note!");
+                    isDone = true;
+                    abort = true;
+                }
+                else
+                {
+                    LoadFretPositions(Music.NoteObjects[currentNotes[count]]);
+                }
+                
+
+            }
+            else if (count >= currentNotes.Length)
+            {
+                lessonDisplayNote.setText("Play This Note!");
+                isDone = true;
+                abort = true;
             }
         }
     }

@@ -14,62 +14,60 @@ public class DisplayNoteManager : MonoBehaviour
     [SerializeField] bool setDefault = false;
     [SerializeField] TextMeshProUGUI text;
     private Renderer thisRenderer;
+    private float timer = 0f;
 
     void Start()
     {
-       thisRenderer =  transform.GetComponent<Renderer>();
-       // Find the first GameObject with the tag "Player"
-        GameObject parent = GameObject.FindWithTag("GuitarStrings");
-
-        if (parent != null)
-        {
-            Debug.Log("Found parent object: " + parent.name);
-        }
-        else
-        {
-            Debug.Log("parent object not found!");
-        }
-       transform.SetParent(parent.transform);
-       
+        thisRenderer =  transform.GetComponent<Renderer>();
+    }
+    public void setText(string inputText)
+    {
+        text.text = inputText;
     }
 
-    void SetIncorrect()
+    public string getText()
     {
+        return text.text;
+    }
+
+    public void SetIncorrect()
+    {
+        setIncorrect = false;
         thisRenderer.material.color = incorrect;
         text.color = incorrect;
         text.alpha = 1f; // Ensure the alpha is fully opaque
     }
 
-    void SetCorrect()
+    public void SetCorrect()
     {
+        setCorrect = true;
         thisRenderer.material.color = correct;
         text.color = correct;
         text.alpha = 1f; // Ensure the alpha is fully opaque
     }
 
-    void SetDefault()
+    public void SetDefault()
     {
+        setDefault = true;
         thisRenderer.material.color = defaultColor;
         text.color = defaultColor;
         text.alpha = 1f; // Ensure the alpha is fully opaque
     }
 
+
     void Update()
     {
-        if(setCorrect)
+        if (setCorrect || setIncorrect || setDefault)
         {
-            setCorrect = false;
-            SetCorrect();
-        }
-        if(setIncorrect)
-        {
-            setIncorrect = false;
-            SetIncorrect();
-        }
-        if(setDefault)
-        {
-            setDefault = false;
-            SetDefault();
+            timer += Time.deltaTime;
+            if (timer >= 1f)
+            {
+                SetDefault();
+                setCorrect = false;
+                setIncorrect = false;
+                setDefault = false;
+                timer = 0f;
+            }
         }
 
     }

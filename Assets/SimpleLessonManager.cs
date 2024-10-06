@@ -50,4 +50,12 @@ public class SimpleLessonManager : MonoBehaviour
         lessonManager.Abort();
     }
 
+    void Update()
+    {
+        if(lessonManager.IsDone())
+        {
+            ExitSubLesson();
+        }
+    }
+
 }
