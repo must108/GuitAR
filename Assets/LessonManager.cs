@@ -5,10 +5,8 @@ using UnityEngine.Video;
 public class LessonManager : MonoBehaviour {
     public Music currentLesson;
     public string[] currentNotes;
-    public int[][,] currentFretPositions;
     private int count = 0;
     private float timer = 0f;
-    private float interval;
 
     public void LoadFretPositions(int[,] fretArray) {
         // Loop through all children of this GameObject
@@ -28,24 +26,20 @@ public class LessonManager : MonoBehaviour {
     public void LoadLesson(Music lesson) {
         currentLesson = lesson;
         currentNotes = currentLesson.GetNotes();
-        currentFretPositions = currentLesson.GetFretPositions();
-        interval = Music.GetInterval();
         count = 0;
-        LoadFretPositions(currentFretPositions[count]);
+        LoadFretPositions(Music.NoteObjects[currentNotes[count]]);
     }
 
     void Start() {
-        LoadLesson(new Lesson1());
+        LoadLesson(new Lesson2());
     }
 
     void Update() {
-        if (count < currentNotes.Length && count < currentFretPositions.Length) {
+        if (count < currentNotes.Length) {
             timer += Time.deltaTime;
-            if (timer >= interval) {
+            if (timer >= Music.GetInterval()) {
                 count += 1;
-                if (count < currentFretPositions.Length) {
-                    LoadFretPositions(currentFretPositions[count]);
-                }
+                LoadFretPositions(Music.NoteObjects[currentNotes[count]]);
                 timer = 0f;
             }
         }
