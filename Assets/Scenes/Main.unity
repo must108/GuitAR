@@ -1500,6 +1500,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   test: 0
+  timer: 0
+  counter: 0
 --- !u!1 &86697188
 GameObject:
   m_ObjectHideFlags: 0
@@ -18064,6 +18066,7 @@ GameObject:
   - component: {fileID: 1644321180}
   - component: {fileID: 1644321179}
   - component: {fileID: 1644321181}
+  - component: {fileID: 1644321182}
   m_Layer: 0
   m_Name: Main Menu
   m_TagString: Untagged
@@ -18122,6 +18125,19 @@ MonoBehaviour:
   simpleLessonMenu: {fileID: 1666912666}
   songLessonMenu: {fileID: 0}
   guitar: {fileID: 645258920}
+--- !u!114 &1644321182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1644321178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 290aabb4da46141c8bfdaf257e84cdc3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guitarObjectSpheres: {fileID: 0}
 --- !u!1 &1659232008
 GameObject:
   m_ObjectHideFlags: 0
@@ -18188,13 +18204,18 @@ GameObject:
   m_Component:
   - component: {fileID: 1666912667}
   - component: {fileID: 1666912668}
+  - component: {fileID: 1666912672}
+  - component: {fileID: 1666912671}
+  - component: {fileID: 1666912670}
+  - component: {fileID: 1666912669}
+  - component: {fileID: 1666912673}
   m_Layer: 0
   m_Name: SimpleLesson
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1666912667
 Transform:
   m_ObjectHideFlags: 0
@@ -18226,7 +18247,73 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   subLessons: {fileID: 1241266738}
   exitButton: {fileID: 1546566268}
-  goBackButton: {fileID: 0}
+  goBackButton: {fileID: 936099232}
+  lesson1: {fileID: 1666912672}
+  lesson2: {fileID: 1666912671}
+  lesson3: {fileID: 1666912670}
+  lesson4: {fileID: 1666912669}
+  lessonManager: {fileID: 1666912673}
+--- !u!114 &1666912669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666912666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec4eeaf24f3424f4f9a7ac2f8421372c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1666912670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666912666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e17a5c82a2ea5418394a01006fd4fa56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1666912671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666912666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eec8598c6a1784024bd41b3b02978862, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1666912672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666912666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bba12cec819c0499f9c24d1f4af6388a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1666912673
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666912666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 290aabb4da46141c8bfdaf257e84cdc3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guitarObjectSpheres: {fileID: 80499215}
 --- !u!1 &1692541485
 GameObject:
   m_ObjectHideFlags: 0
