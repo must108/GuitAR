@@ -1,12 +1,9 @@
-using UnityEngine;
-
 // C major scale
-public class Lesson3 : Lesson {
-    private static float interval = 1f;
-
+public class Lesson3 : Music {
     private static readonly string[] Lesson3Notes = {
         "C", "D", "E", "F", "G",
-        "A", "B", "C",
+        "A", "B", "C", "B", "A",
+        "G", "F", "E", "D", "C"
     };
 
     private static readonly int[][,] Lesson3Objects = {
@@ -53,8 +50,8 @@ public class Lesson3 : Lesson {
             { 0, 0, 0, 0, 0, 0 },
         },
         new int [,] {
-            { 0, 0, 0, 0, 1, 0 },
             { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 1, 0 },
             { 0, 0, 0, 0, 0, 0 },
             { 0, 0, 0, 0, 0, 0 },
             { 0, 0, 0, 0, 0, 0 },
@@ -66,6 +63,55 @@ public class Lesson3 : Lesson {
             { 0, 0, 0, 0, 0, 0 },
             { 0, 0, 0, 0, 0, 0 },
         },
+        new int [,] {
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 1, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        },
+        new int [,] {
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 1, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        },
+        new int [,] {
+            { 0, 0, 0, 1, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        },
+        new int [,] {
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 1, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        },
+        new int [,] {
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 1, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        }, 
+        new int [,] {
+            { 0, 0, 1, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        }, 
+        new int [,] {
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+            { 0, 1, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0 },
+        },
     };
 
     public override string[] GetNotes() {
@@ -74,9 +120,5 @@ public class Lesson3 : Lesson {
 
     public override int[][,] GetFretPositions() {
         return Lesson3Objects;
-    }
-
-    public override float GetInterval() {
-        return interval;
     }
 }

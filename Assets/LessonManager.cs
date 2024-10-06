@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Video;
 
 public class LessonManager : MonoBehaviour {
-    public Lesson currentLesson;
+    public Music currentLesson;
     public string[] currentNotes;
     public int[][,] currentFretPositions;
     private int count = 0;
@@ -25,17 +25,17 @@ public class LessonManager : MonoBehaviour {
         }
     }
 
-    public void LoadLesson(Lesson lesson) {
+    public void LoadLesson(Music lesson) {
         currentLesson = lesson;
         currentNotes = currentLesson.GetNotes();
         currentFretPositions = currentLesson.GetFretPositions();
-        interval = currentLesson.GetInterval();
+        interval = Music.GetInterval();
         count = 0;
         LoadFretPositions(currentFretPositions[count]);
     }
 
     void Start() {
-        LoadLesson(new Lesson3());
+        LoadLesson(new Lesson1());
     }
 
     void Update() {
