@@ -28,6 +28,8 @@ public class MenuManager : MonoBehaviour
         playMenu.SetActive(false);
         lessonMenu.SetActive(true);
         guitar.SetActive(false);
+        simpleLessonMenu.SetActive(false);
+        songLessonMenu.SetActive(false);
     }
 
     public void StartSimpleLesson()
