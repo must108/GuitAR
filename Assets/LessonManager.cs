@@ -34,7 +34,7 @@ public class LessonManager : MonoBehaviour {
     }
 
     void Start() {
-        LoadLesson(new Lesson1());
+        LoadLesson(new Lesson2());
     }
 
     void Update() {
