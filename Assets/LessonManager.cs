@@ -29,13 +29,13 @@ public class LessonManager : MonoBehaviour {
         currentLesson = lesson;
         currentNotes = currentLesson.GetNotes();
         currentFretPositions = currentLesson.GetFretPositions();
-        interval = currentLesson.GetInterval();
+        interval = Music.GetInterval();
         count = 0;
         LoadFretPositions(currentFretPositions[count]);
     }
 
     void Start() {
-        LoadLesson(new Lesson4());
+        LoadLesson(new Lesson1());
     }
 
     void Update() {

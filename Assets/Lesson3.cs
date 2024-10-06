@@ -1,7 +1,5 @@
 // C major scale
 public class Lesson3 : Music {
-    private static readonly float interval = 1f;
-
     private static readonly string[] Lesson3Notes = {
         "C", "D", "E", "F", "G",
         "A", "B", "C", "B", "A",
@@ -122,9 +120,5 @@ public class Lesson3 : Music {
 
     public override int[][,] GetFretPositions() {
         return Lesson3Objects;
-    }
-
-    public override float GetInterval() {
-        return interval;
     }
 }

@@ -2,8 +2,6 @@ using UnityEngine;
 
 // Last three strings tutorial
 public class Lesson2 : Music {
-    private static float interval = 2f;
-
     private static readonly string[] Lesson2Notes = {
         "D", "D#", "E", "F", "F#",
         "A", "A#", "B", "C", "C#",
@@ -124,9 +122,5 @@ public class Lesson2 : Music {
 
     public override int[][,] GetFretPositions() {
         return Lesson2Objects;
-    }
-
-    public override float GetInterval() {
-        return interval;
     }
 }   
